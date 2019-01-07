@@ -1,9 +1,8 @@
-import os
 import logging
 from collections import OrderedDict
 import tkinter as tk
 import tkinter.filedialog as filedialog
-import ebay_pics.settings as env
+from ebay_pics.tools.utils import get_current_dir
 
 
 logger = logging.getLogger(__name__)
@@ -19,7 +18,7 @@ class ButtonFrame(tk.Frame):
         self.root = root
         self.page_link = tk.StringVar()
         self.item_num = tk.StringVar()
-        self.files = None
+        self.files = []
 
     def _create_frame(self):
         self.place(x=5, y=5, height=140, width=790)
@@ -127,12 +126,7 @@ class ButtonFrame(tk.Frame):
         logger.info('Assigned function callback to start download button')
 
     def _file_callback(self, func):
-        try:
-            cur_dir = env.BASE_DIR
-            logger.info('Assigned {} to active directory'.format(cur_dir))
-        except AttributeError:
-            cur_dir = os.path.dirname(__file__)
-            logger.info('Set active directory to program directory')
+        cur_dir = get_current_dir()
         self.files = [self.page_link.get()] if self.page_link.get() != '' else list()
         self.files.extend(filedialog.askopenfilenames(initialdir=cur_dir))
         func()

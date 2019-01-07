@@ -3,7 +3,7 @@ import threading
 import time
 import logging
 from ebay_pics.tools.link_manager import PictureGetter
-from ebay_pics.tools.utils import normalize_filename
+from ebay_pics.tools.utils import get_images_dir
 
 
 logger = logging.getLogger(__name__)
@@ -59,9 +59,7 @@ class Controller:
                 return
             item_num = int(self._file_storage.item_num.get())
             logger.info('User demanded {} to download'.format(item_num))
-            folder_name = normalize_filename(os.path.splitext(
-                os.path.basename(page.path))[0])
-            dir_save = os.path.join(os.path.dirname(page.path), folder_name)
+            dir_save = get_images_dir(page.path)
             logger.info('All images will be saved into {}'.format(dir_save))
             manager = self._manager(page.path, self._getter)
             page.set_active(manager.get_number_of_links())
@@ -81,11 +79,9 @@ class Controller:
                                                    bonus, dir_save)
                         pic_getter.download_pics()
                         pic_getter.download_bonus()
+                        page.add_one_done()
                     except Exception as err:
                         logger.exception(err)
-                    finally:
-                        page.add_one_done()
-
             except Exception as err:
                 logger.exception(err)
             page.set_done()
