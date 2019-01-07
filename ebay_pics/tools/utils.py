@@ -1,7 +1,8 @@
 import re
-import unicodedata
-import logging
 import time
+import logging
+import unicodedata
+from urllib.parse import urlsplit, urlunsplit
 from functools import wraps
 try:
     from pip import main as pipmain
@@ -20,6 +21,18 @@ def dedupl(array):
             unique.add(item)
             result.append(item)
     return result
+
+
+def get_main_link(raw_link):
+    link_parts = urlsplit(raw_link)
+    return link_parts.scheme, link_parts.netloc, link_parts.path
+
+
+def join_link(*args):
+    if len(args) < 5:
+        args = list(args)
+        args.extend(['' for _ in range(5 - len(args))])
+    return urlunsplit(args)
 
 
 def install_reqeusts():

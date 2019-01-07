@@ -4,24 +4,28 @@ import sys
 import logging
 import unicodedata
 import ebay_pics.settings as env
-from ebay_pics.tools.utils import dedupl
+from ebay_pics.tools.utils import dedupl, get_main_link, join_link
 
 
 logger = logging.getLogger(__name__)
 
 
-class LinkManager:
+class RequestParamsMixin:
+    _headers = {'Accept-Language': 'en_EN', 'Content-Language': 'en_EN',
+                'Cache-Control': 'no-cache'}
+    _params = {'_ul': 'EN'}
+
+
+class LinkManager(RequestParamsMixin):
     def __init__(self, main_page, downloader):
         logger.debug('Creating LinkManager with {}'.format(main_page))
         self._main_page = main_page
         self._getter = downloader
         self._links = []
         self._item_link = re.compile('href="(http[s]://www.ebay\\.\S+/itm/\S*)"')
-        self._page_id = re.compile('http.*://www.ebay.*/itm.*/(.*)\?')
+        self._page_id = re.compile('http.*://www.ebay.*/itm.*/(.*)')
         self._bonus_page = 'https://vi.vipr.ebaydesc.com/ws/eBayISAPI.dll?' \
                            'ViewItemDescV4&item='
-        self._headers = {'Accept-Language': 'en_EN', 'Content-Language': 'en_EN',
-                         'Cache-Control': 'no-cache'}
 
     def _get_main(self):
         if os.path.isfile(self._main_page):
@@ -31,7 +35,8 @@ class LinkManager:
         else:
             logger.info('Downloading remote main page')
             self._main_page = self._getter.download(self._main_page,
-                                                    headers=self._headers)[0]
+                                                    headers=self._headers,
+                                                    params=self._params)[0]
             self._main_page = str(self._main_page, encoding='utf-8')
 
     def _find_links(self):
@@ -40,15 +45,10 @@ class LinkManager:
         prep_links = []
         for copies in raw_links:
             logger.debug('Processing raw link {}'.format(copies))
-            if copies.find('thumbs') == -1:
-                for phrase in ('?hash', '&hash'):
-                    if copies.find(phrase) != -1:
-                        copies = copies[:copies.find(phrase)]
-                        copies += '{}_ul=EN'.format(phrase[0])
-                        logger.debug('Insert ul=EN into raw link {}'.format(copies))
-                if copies not in prep_links:
-                    prep_links.append(copies)
-                    logger.debug('Append {} to resulted list'.format(copies))
+            copies = join_link(*get_main_link(copies))
+            if copies not in prep_links:
+                prep_links.append(copies)
+                logger.debug('Append {} to resulted list'.format(copies))
         self._links.extend(prep_links)
 
     def _find_id(self, link):
@@ -68,7 +68,7 @@ class LinkManager:
         return zip(self._links, (self._get_bonus_link(link) for link in self._links))
 
 
-class PictureGetter:
+class PictureGetter(RequestParamsMixin):
     def __init__(self, prefix, downloader, link, bonus, dir_save):
         self._prefix = prefix
         self._getter = downloader
@@ -82,16 +82,16 @@ class PictureGetter:
         self._pic_link = re.compile('src="(http[s]://i.ebayimg\\.[a-z]{2,3}/images/\S*)"')
         self._bonus_pic = re.compile('src="(.*?\.jpg)"')
         self._title_template = '<span id="vi-lkhdr-itmTitl" class="u-dspn">(.*)</span>'
-        self._headers = {'Accept-Language': 'en_EN', 'Content-Language': 'en_EN',
-                         'Cache-Control': 'no-cache'}
         self._char_map = {char: '_' for char in [':', '?', '&', '/', '\\', '<', '>',
                                                  '|', '*']}
         logger.debug('Created PictureGetter with link {} & bonus {}'.format(link, bonus))
 
     def _download_page(self):
-        self._page = self._getter.download(self._link)[0]
+        self._page = self._getter.download(self._link, headers=self._headers,
+                                           params=self._params)[0]
         self._page = str(self._page, encoding='utf-8')
-        self._bonus_page = self._getter.download(self._bonus)[0]
+        self._bonus_page = self._getter.download(self._bonus, headers=self._headers,
+                                                 params=self._params)[0]
         self._bonus_page = str(self._bonus_page, encoding='utf-8')
         logger.info('Downloaded main and bonus pages')
 
