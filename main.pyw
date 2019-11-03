@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def configure_logging():
-    fm_str = '%(asctime)-15s - %(levelname)-8s - %(filename)-15s - ' \
+    fm_str = '%(asctime)-15s - %(levelname)-8s - %(filename)-15s:' \
              '%(lineno)-3s - %(message)s'
     logging.basicConfig(level=getattr(logging, env.LOGGING_LEVEL),
                         filename='execution_details.log', filemode='w', format=fm_str)

@@ -104,7 +104,7 @@ class PictureGetter(RequestParamsMixin):
         else:
             self._pics = self._bonus_pic.findall(self._bonus_page)
             logger.info('Found images in bonus lot page')
-        self._pics = dedupl([re.sub('(-l.*).jpg', '-l1600.jpg', pic)
+        self._pics = dedupl([re.sub('(-l.*).(jpg|png)', '-l1600.jpg', pic)
                              for pic in self._pics])
         logger.info('List of pictures to download {}'.format(self._pics))
 

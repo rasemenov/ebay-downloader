@@ -3,13 +3,14 @@ import re
 import time
 import logging
 import unicodedata
-from urllib.parse import urlsplit, urlunsplit
 from functools import wraps
+from urllib.parse import urlsplit, urlunsplit
 try:
     from pip import main as pipmain
 except ImportError:
     from pip._internal import main as pipmain
 import ebay_pics.settings as env
+
 
 logger = logging.getLogger(__name__)
 
